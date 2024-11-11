@@ -10,6 +10,10 @@ def f(a):
     """
     return -np.log(1 + np.exp(a))
 
+def df(a):
+    """Derivative of function f."""
+    return 1 / (1 + np.exp(a))
+
 def loss_fn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta):
     """
     损失函数

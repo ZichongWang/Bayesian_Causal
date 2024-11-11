@@ -3,6 +3,7 @@ import numpy as np
 from Tfxn_py import Tfxn
 from parder_py import parder
 from Loss_py import loss_fn
+from Loss_py import df
 
 def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, prune_type):
     """
@@ -38,8 +39,8 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
     epoches = 0
 
     # 计算 alpha
-    t_alLS = np.log(LS / (1 - LS))
-    t_alLF = np.log(LF / (1 - LF))
+    t_alLS = np.log(LS / (1 - LS + 1e-6))
+    t_alLF = np.log(LF / (1 - LF + 1e-6))
     t_alLS = np.clip(t_alLS, -6, 6)
     t_alLF = np.clip(t_alLF, -6, 6)
     final_w = w.copy()
@@ -133,12 +134,18 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
             grad = (np.sum(identity * grad_D, axis=0) / tmp_count)
             grad[tmp_count == 0] = 0
 
-            # 计算正则化
+            # 计算正则化梯度
             regu_grad = lambda_ * 100 * (1 / (1 + np.exp(-0.01 * w)) - 1 / (1 + np.exp(0.01 * w)))
+
+            # 确保 grad 和 regu_grad 的广播匹配
             if regu_type == 1:
-                grad[[8, 9, 10]] -= regu_grad[[8, 9, 10]]
+                grad[[8, 9, 10]] -= regu_grad[[8, 9, 10]].reshape(-1)
             else:
-                grad[[14, 15]] -= regu_grad[[14, 15]]
+                grad[[14, 15]] -= regu_grad[[14, 15]].reshape(-1)
+
+            # 替换 NaN 值，防止错误传播
+            grad = np.nan_to_num(grad)
+
 
             # 计算新的权重
             wnext = w + rho * grad

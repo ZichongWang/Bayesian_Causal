@@ -2,7 +2,7 @@ import numpy as np
 import rasterio
 import scipy.io as sio
 from rasterio.enums import Resampling
-
+import os
 from pruning_py import pruning
 from SVI_py import svi
 
@@ -11,7 +11,9 @@ import time
 start_time = time.time()  # 开始计时，记录代码执行时间
 
 # 导入地理数据
-location = 'data/2024_japan2'  # 文件所在的位置
+location = 'data'  # 文件所在的位置
+
+event = '2024_japan2'
 
 def read_raster(file_path):
     """
@@ -28,10 +30,10 @@ def read_raster(file_path):
     return data, profile
 
 # 读取多个栅格文件
-Y, Y_profile = read_raster(location + 'DPM2_TN22_CROP.tif')
-BD, BD_profile = read_raster(location + 'BD_TN22.tif')
-LS, LS_profile = read_raster(location + 'PLS_TN22.tif')
-LF, LF_profile = read_raster(location + 'PLF_TN22.tif')
+Y, Y_profile = read_raster(os.path.join(location, event, 'damage_proxy_map', f'{event}_damage_proxy_map.tif'))
+BD, BD_profile = read_raster(os.path.join(location, event, 'building_footprint', f'{event}_building_footprint_rasterized.tif'))
+LS, LS_profile = read_raster(os.path.join(location, event, 'prior_models', f'{event}_prior_landslide_model.tif'))
+LF, LF_profile = read_raster(os.path.join(location, event, 'prior_models', f'{event}_prior_liquefaction_model.tif'))
 
 # 数据修正
 BD[BD > 0] = 1  # 将基础数据 BD 中所有大于 0 的值设为 1

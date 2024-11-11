@@ -1,6 +1,6 @@
 # 改好了。
 import numpy as np
-from Loss_py import df
+from Loss import df
 
 #   Guide 
 # %   w has [w0;weps;w0BD;w0LS;w0LF;wLSBD;wLFBD;wBDy;wLSy;wLFy;weLS;weLF;weBD;waLS;waLF] 

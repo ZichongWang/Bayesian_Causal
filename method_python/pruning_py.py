@@ -59,5 +59,5 @@ LF = np.array([[0.4, 0.6], [0.5, 0.3]])
 sigma = 0.1
 side = "single"
 
-result = pruning(BD, LS, LF, sigma, side)
-print(result)
+# result = pruning(BD, LS, LF, sigma, side)
+# print(result)
