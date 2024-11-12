@@ -13,7 +13,7 @@ start_time = time.time()  # 开始计时，记录代码执行时间
 # 导入地理数据
 location = 'data'  # 文件所在的位置
 
-event = '2024_japan2'
+event = '2023_turkey'
 
 def read_raster(file_path):
     """
@@ -73,7 +73,7 @@ tmp_LS = new_LS  # 临时存储滑坡数据
 #* 根据剪枝对局部模型进行分类 相当于删除一些图的
 prune_type = 'double'  # 剪枝类型
 sigma = np.median(np.abs(new_LS[(LS > 0) & (LF > 0)] - new_LF[(LS > 0) & (LF > 0)]))  # 计算 LS 和 LF 之间差值的中位数
-LOCAL = pruning(BD, tmp_LS, tmp_LF, sigma, prune_type)  # 调用剪枝函数（需要实现）
+LOCAL = pruning(BD, tmp_LS, tmp_LF, sigma, prune_type)  # 调用剪枝函数（需要实现） 数值为1-6
 tmp_LS[(LOCAL == 5) | (LOCAL == 6)] = np.min(new_LS[new_LS > 0])  # 修改剪枝后的滑坡数据
 tmp_LF[(LOCAL == 5) | (LOCAL == 6)] = np.min(new_LF[new_LF > 0])  # 修改剪枝后的液化数据
 
@@ -82,7 +82,7 @@ lambda_term = 0  # Lambda 参数
 
 # 初始化权重向量 w
 # [w0;weps;w0BD;w0LS;w0LF;wLSBD;wLFBD;wBDy;wLSy;wLFy;weLS;weLF;weBD;waLS;waLF]
-w = np.random.rand(15, 1)  # 随机初始化权重向量
+w = np.random.rand(15)  # 随机初始化权重向量
 w[[3, 4]] = 0  # 将第 4 和第 5 个权重设为 0
 w[[0, 2]] = -1 * w[[0, 2]]  # 将第 1 和第 3 个权重取反
 regu_type = 1  # 正则化类型

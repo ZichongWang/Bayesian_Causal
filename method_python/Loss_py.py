@@ -30,6 +30,8 @@ def loss_fn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta):
     L: 损失值
     """
     # 对数转换
+    assert y.shape == qBD.shape == qLS.shape == qLF.shape == alLS.shape == alLF.shape == local.shape, "Input shapes must match"
+    assert len(w) == 15, "Weight vector w must have 15 elements"
     y = np.log(1e-6 + y)
     f_qBD = np.minimum(qBD + 1e-6, 1 - 1e-6)
     f_qLS = np.minimum(qLS + 1e-6, 1 - 1e-6)
@@ -74,9 +76,10 @@ def loss_fn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta):
                                 (local == 6) * w[7] * w[8] * w[9] * qBD * qLS * qLF) - y
 
     # L_ex 计算
-    L_ex = - ((local == 5) | (local == 6)) * (f_qLS * f_qLF) / (2 * delta)
+    L_ex = -1.0 * ((local == 5) | (local == 6)) * (f_qLS * f_qLF) / (2 * delta)
     L_ex = np.maximum(L_ex, -1e+2)
 
     # 总损失
     L = LBD + LLS + LLF + Leps + L_ex
+
     return L

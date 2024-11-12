@@ -164,8 +164,8 @@ def parder(y, qBD, qLS, qLF, alLS, alLF, w, local):
     )
 
     # 检查 grad 中是否有 NaN 值
-    if np.sum(np.isnan(grad)) > 0:
-        print(grad)
+    # if np.sum(np.isnan(grad)) > 0:
+    #     print(grad)
 
     return grad
 

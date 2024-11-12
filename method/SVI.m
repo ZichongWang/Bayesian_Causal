@@ -132,7 +132,7 @@ while (epoches<30) && myConditionFunc(sum(sum(LOCAL==5)),abs(loss_old-loss)-eps_
                     local==2|local==4|local==5|local==6, local==3|local==4|local==6, local==1|local==3|local==5|local==6, local==2|local==4|local==5|local==6];
         grad_D = parder(y, qBD, qLS, qLF, alLS, alLF, w, local);
         tmp_count = sum(identity);
-        grad = ((sum(identity.*grad_D))./tmp_count)';
+        grad = ((sum(identity.*grad_D))./tmp_count);
         grad(tmp_count==0) = 0;
 
         % Compute the regularization

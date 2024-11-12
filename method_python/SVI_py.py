@@ -28,12 +28,18 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
     final_w, final_QBD, final_QLS, final_QLF, QLS, QLF, QBD, final_loss, best_loss, LOCAL
     """
     # 初始化
+    w = w.flatten()
+    Y = Y.astype(np.float64)
+    LS = LS.astype(np.float64)
+    LF = LF.astype(np.float64)
+    LOCAL = LOCAL.astype(np.int32)
+
     QBD = 0.001 * np.random.rand(*Y.shape)
     QLS = LS.copy()
     QLF = LF.copy()
     loss = 1e+5
     loss_old = 0
-    best_loss = -1e+4
+    best_loss = 1e+6
     final_loss = []
     grad = np.zeros(len(w))
     epoches = 0
@@ -130,6 +136,7 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
                                         np.isin(local, [2, 4, 5, 6]), np.isin(local, [3, 4, 6]),
                                         np.isin(local, [1, 3, 5, 6]), np.isin(local, [2, 4, 5, 6])])
             grad_D = parder(y, qBD, qLS, qLF, alLS, alLF, w, local)
+            assert identity.shape == grad_D.shape, "Shape mismatch between identity and grad_D"
             tmp_count = np.sum(identity, axis=0)
             grad = (np.sum(identity * grad_D, axis=0) / tmp_count)
             grad[tmp_count == 0] = 0
@@ -139,9 +146,10 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
 
             # 确保 grad 和 regu_grad 的广播匹配
             if regu_type == 1:
-                grad[[8, 9, 10]] -= regu_grad[[8, 9, 10]].reshape(-1)
+                grad[[7, 8, 9]] -= regu_grad[[7, 8, 9]]
             else:
-                grad[[14, 15]] -= regu_grad[[14, 15]].reshape(-1)
+                grad[[13, 14]] -= regu_grad[[13, 14]]
+
 
             # 替换 NaN 值，防止错误传播
             grad = np.nan_to_num(grad)
@@ -161,7 +169,7 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
             if i % 100 == 0:
                 c_loss = np.mean(loss_fn(Y.flatten(), QBD.flatten(), QLS.flatten(), QLF.flatten(),
                                          t_alLS.flatten(), t_alLF.flatten(), wnext, LOCAL.flatten(), delta))
-                if c_loss > best_loss:
+                if c_loss < best_loss:
                     final_QLS, final_QLF, final_QBD, final_w = QLS.copy(), QLF.copy(), QBD.copy(), wnext
                     best_loss = c_loss
 
