@@ -15,7 +15,7 @@ def Tfxn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta):
     
     # Log transformation of y to avoid very small values
     # y = np.where(y < 0, 0, y)
-    y = np.log(1e-6 + y)
+    y = np.log(1e-6 + y)# log之后全是负的
 
     # gBD computation
     gBD = ((local == 3) * (qLS * f(-w[2] - w[5] + (w[12] ** 2) / 2)
@@ -78,9 +78,12 @@ def Tfxn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta):
     gLF -= ((local == 5) | (local == 6)) * (qLS / (2 * delta))
 
     # Combine results
-    g = np.zeros((len(y), 3))
-    g[:, 0] = gBD
-    g[:, 1] = gLS
-    g[:, 2] = gLF
+#     g = np.zeros((len(y), 3))
+#     g[:, 0] = gBD
+#     g[:, 1] = gLS
+#     g[:, 2] = gLF
 
+    g = np.hstack((gBD, gLS, gLF))
+
+    # return gBD, gLS, gLF
     return g

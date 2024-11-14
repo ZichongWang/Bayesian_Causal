@@ -5,7 +5,7 @@ from rasterio.enums import Resampling
 import os
 from pruning_py import pruning
 from SVI_py import svi
-
+np.random.seed(42)
 # 初始化
 import time
 start_time = time.time()  # 开始计时，记录代码执行时间
@@ -13,7 +13,11 @@ start_time = time.time()  # 开始计时，记录代码执行时间
 # 导入地理数据
 location = 'data'  # 文件所在的位置
 
-event = '2023_turkey'
+event = '2024_japan2'
+if event == '2023_turkey_new':
+    event_1 = '2023_turkey'
+else:
+    event_1 = event
 
 def read_raster(file_path):
     """
@@ -30,10 +34,10 @@ def read_raster(file_path):
     return data, profile
 
 # 读取多个栅格文件
-Y, Y_profile = read_raster(os.path.join(location, event, 'damage_proxy_map', f'{event}_damage_proxy_map.tif'))
-BD, BD_profile = read_raster(os.path.join(location, event, 'building_footprint', f'{event}_building_footprint_rasterized.tif'))
-LS, LS_profile = read_raster(os.path.join(location, event, 'prior_models', f'{event}_prior_landslide_model.tif'))
-LF, LF_profile = read_raster(os.path.join(location, event, 'prior_models', f'{event}_prior_liquefaction_model.tif'))
+Y, Y_profile = read_raster(os.path.join(location, event, 'damage_proxy_map', f'{event_1}_damage_proxy_map.tif'))
+BD, BD_profile = read_raster(os.path.join(location, event, 'building_footprint', f'{event_1}_building_footprint_rasterized.tif'))
+LS, LS_profile = read_raster(os.path.join(location, event, 'prior_models', f'{event_1}_prior_landslide_model.tif'))
+LF, LF_profile = read_raster(os.path.join(location, event, 'prior_models', f'{event_1}_prior_liquefaction_model.tif'))
 
 # 数据修正
 BD[BD > 0] = 1  # 将基础数据 BD 中所有大于 0 的值设为 1
@@ -41,6 +45,7 @@ Y[np.isnan(Y)] = 0  # 将 Y 数据中的 NaN 值设为 0
 BD[np.isnan(BD)] = 0  # 将 BD 数据中的 NaN 值设为 0
 LS[np.isnan(LS)] = 0  # 将滑坡数据 LS 中的 NaN 值设为 0
 LF[np.isnan(LF)] = 0  # 将液化数据 LF 中的 NaN 值设为 0
+Y = (Y + 11) / 20
 
 # 将滑坡区域百分比转换为概率
 new_LS = np.copy(LS)  # 创建滑坡数据的副本
@@ -72,7 +77,8 @@ tmp_LS = new_LS  # 临时存储滑坡数据
 
 #* 根据剪枝对局部模型进行分类 相当于删除一些图的
 prune_type = 'double'  # 剪枝类型
-sigma = np.median(np.abs(new_LS[(LS > 0) & (LF > 0)] - new_LF[(LS > 0) & (LF > 0)]))  # 计算 LS 和 LF 之间差值的中位数
+# sigma = np.median(np.abs(new_LS[(LS > 0) & (LF > 0)] - new_LF[(LS > 0) & (LF > 0)]))  # 计算 LS 和 LF 之间差值的中位数
+sigma = 0
 LOCAL = pruning(BD, tmp_LS, tmp_LF, sigma, prune_type)  # 调用剪枝函数（需要实现） 数值为1-6
 tmp_LS[(LOCAL == 5) | (LOCAL == 6)] = np.min(new_LS[new_LS > 0])  # 修改剪枝后的滑坡数据
 tmp_LF[(LOCAL == 5) | (LOCAL == 6)] = np.min(new_LF[new_LF > 0])  # 修改剪枝后的液化数据
@@ -85,7 +91,7 @@ lambda_term = 0  # Lambda 参数
 w = np.random.rand(15)  # 随机初始化权重向量
 w[[3, 4]] = 0  # 将第 4 和第 5 个权重设为 0
 w[[0, 2]] = -1 * w[[0, 2]]  # 将第 1 和第 3 个权重取反
-regu_type = 1  # 正则化类型
+regu_type = 2  # 正则化类型
 
 # 设置变分超参数
 Nq = 10  # 后验概率迭代次数

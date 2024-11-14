@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import time
 
 from Tfxn_py import Tfxn
 from parder_py import parder
@@ -28,25 +30,26 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
     final_w, final_QBD, final_QLS, final_QLF, QLS, QLF, QBD, final_loss, best_loss, LOCAL
     """
     # 初始化
-    w = w.flatten()
-    Y = Y.astype(np.float64)
-    LS = LS.astype(np.float64)
-    LF = LF.astype(np.float64)
-    LOCAL = LOCAL.astype(np.int32)
+    # w = w.flatten()
+    # Y = Y.astype(np.float64)
+    # LS = LS.astype(np.float64)
+    # LF = LF.astype(np.float64)
+    # LOCAL = LOCAL.astype(np.int32)
+    time_record = pd.DataFrame(columns=["epoch", "time"])
 
     QBD = 0.001 * np.random.rand(*Y.shape)
     QLS = LS.copy()
     QLF = LF.copy()
     loss = 1e+5
     loss_old = 0
-    best_loss = 1e+6
+    best_loss = -1e+6
     final_loss = []
     grad = np.zeros(len(w))
     epoches = 0
 
     # 计算 alpha
-    t_alLS = np.log(LS / (1 - LS + 1e-6))
-    t_alLF = np.log(LF / (1 - LF + 1e-6))
+    t_alLS = np.log(LS / (1 - LS + 1e-4))
+    t_alLF = np.log(LF / (1 - LF + 1e-4))
     t_alLS = np.clip(t_alLS, -6, 6)
     t_alLF = np.clip(t_alLF, -6, 6)
     final_w = w.copy()
@@ -58,7 +61,9 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
         my_condition_func = lambda x, y: (x > 0) or (y > 0)
 
     # 主循环
+    start_time = time.time()
     while epoches < 30 and my_condition_func(np.sum(LOCAL == 5), abs(loss_old - loss) - eps_0):
+
         # 创建一个大小为 bsize 的位置样本批次
         totalnum = Y.size
         bsize = 500
@@ -77,18 +82,23 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
 
         # 对每个样本批次运行
         for i in range(bnum):
-            y = Y.flat[iD[:, i]]
-            qBD = QBD.flat[iD[:, i]]
-            qLS = QLS.flat[iD[:, i]]
-            qLF = QLF.flat[iD[:, i]]
-            local = LOCAL.flat[iD[:, i]]
-            alLS = t_alLS.flat[iD[:, i]]
-            alLF = t_alLF.flat[iD[:, i]]
+            #* 这里MATLAB和Python有较大差别，需要flatten()函数
+            idx = iD[:, i].reshape(-1, 1)
+            y = Y.flatten()[idx]          # 从 Y 中提取当前批次的样本
+            qBD = QBD.flatten()[idx]      # 从 QBD 中提取当前批次的样本
+            qLS = QLS.flatten()[idx]      # 从 QLS 中提取当前批次的样本
+            qLF = QLF.flatten()[idx]      # 从 QLF 中提取当前批次的样本
+            local = LOCAL.flatten()[idx]  # 从 LOCAL 中提取当前批次的样本
+            alLS = t_alLS.flatten()[idx]  # 从 t_alLS 中提取当前批次的样本
+            alLF = t_alLF.flatten()[idx]  # 从 t_alLF 中提取当前批次的样本
 
             # 迭代
             for nq in range(Nq):
                 q = 1 / (1 + np.exp(-Tfxn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta)))
                 qBD, qLS, qLF = q[:, 0], q[:, 1], q[:, 2]
+                qBD = qBD.reshape(-1, 1)
+                qLS = qLS.reshape(-1, 1)
+                qLF = qLF.reshape(-1, 1)
 
                 # 应用剪枝
                 qBD[local < 3] = 0
@@ -164,23 +174,28 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
             # 计算损失
             tmp_loss = np.mean(loss_fn(y, qBD, qLS, qLF, alLS, alLF, wnext, local, delta))
             loss += tmp_loss
-            if i % 20 == 0:
+            if (i+1) % 20 == 0:
                 tmp_final_loss.append(tmp_loss)
-            if i % 100 == 0:
+            if (i+1) % 100 == 0:
                 c_loss = np.mean(loss_fn(Y.flatten(), QBD.flatten(), QLS.flatten(), QLF.flatten(),
                                          t_alLS.flatten(), t_alLF.flatten(), wnext, LOCAL.flatten(), delta))
-                if c_loss < best_loss:
+                if c_loss > best_loss:
                     final_QLS, final_QLF, final_QBD, final_w = QLS.copy(), QLF.copy(), QBD.copy(), wnext
                     best_loss = c_loss
 
             # 更新权重
             w = wnext
 
+        end_time = time.time()
+        time_record = pd.concat(
+            [time_record, pd.DataFrame({"epoch": [epoches], "time": [end_time - start_time]})]
+        )
         # 显示进度
         print(f"epoch loss is {loss / bnum}")
         epoches += 1
         final_loss.extend(tmp_final_loss)
 
+    time_record.to_csv("time_record.csv", index=False)
     return final_w, QBD, QLS, QLF, final_QLS, final_QLF, final_QBD, final_loss, best_loss, LOCAL
 
 # 需要定义的其他函数：

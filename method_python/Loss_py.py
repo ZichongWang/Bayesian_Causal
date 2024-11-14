@@ -50,23 +50,23 @@ def loss_fn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta):
                         qLS * (1 - qLF) * f(w[2] + w[5] + (w[12] ** 2) / 2) +
                         (1 - qLS) * qLF * f(w[2] + w[6] + (w[12] ** 2) / 2) +
                         (1 - qLS) * (1 - qLF) * f(w[2] + (w[12] ** 2) / 2))) - \
-          ((local == 3) | (local == 4) | (local == 6)) * (qBD * np.log(f_qBD) + (1 - qBD) * np.log(1 - f_qBD))
+          ((local == 3) | (local == 4) | (local == 6)) * (qBD * np.log(f_qBD + 1e-6) + (1 - qBD) * np.log(1 - f_qBD + 1e-6))
     LBD[(local == 0) | (local == 1) | (local == 2) | (local == 5)] = 0
 
     # LLS 计算
     LLS = ((local == 1) | (local == 3) | (local == 5) | (local == 6)) * (qLS * f(-w[3] - w[13] * alLS + (w[10] ** 2) / 2) +
                                                                          (1 - qLS) * f(w[3] + w[13] * alLS + (w[10] ** 2) / 2) -
-                                                                         qLS * np.log(f_qLS) - (1 - qLS) * np.log(1 - f_qLS))
+                                                                         qLS * np.log(f_qLS + 1e-6) - (1 - qLS) * np.log(1 - f_qLS + 1e-6))
     LLS[(local == 0) | (local == 2) | (local == 4)] = 0
 
     # LLF 计算
     LLF = ((local == 2) | (local == 4) | (local == 5) | (local == 6)) * (qLF * f(-w[4] - w[14] * alLF + (w[11] ** 2) / 2) +
                                                                          (1 - qLF) * f(w[4] + w[14] * alLF + (w[11] ** 2) / 2) -
-                                                                         qLF * np.log(f_qLF) - (1 - qLF) * np.log(1 - f_qLF))
+                                                                         qLF * np.log(f_qLF + 1e-6) - (1 - qLF) * np.log(1 - f_qLF + 1e-6))
     LLF[(local == 0) | (local == 1) | (local == 3)] = 0
 
     # Epsilon 计算
-    Leps = - (0.5 * np.log(w[1] ** 2) + (y - w[0]) * (y - w[0]) / (2 * (w[1] ** 2))) - \
+    Leps = - (0.5 * np.log(w[1] ** 2 + 1e-6) + (y - w[0]) * (y - w[0]) / (2 * (w[1] ** 2) + 1e-6)) - \
            (1 / (2 * (w[1] ** 2))) * ((local == 3) | (local == 4) | (local == 6)) * w[7] * qBD * (w[7] - 2 * y + 2 * w[0]) - \
            (1 / (2 * (w[1] ** 2))) * ((local == 1) | (local == 3) | (local == 5) | (local == 6)) * w[8] * qLS * (w[8] - 2 * y + 2 * w[0]) - \
            (1 / (2 * (w[1] ** 2))) * ((local == 2) | (local == 4) | (local == 5) | (local == 6)) * w[9] * qLF * (w[9] - 2 * y + 2 * w[0]) - \

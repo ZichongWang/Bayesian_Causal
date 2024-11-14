@@ -19,7 +19,7 @@ event = '2024_japan2';
 [LS, LS_R] = readgeoraster(join([location, event, '\prior_models\', event, '_prior_landslide_model.tif']));
 [LF, LF_R] = readgeoraster(join([location, event,'\prior_models\', event, '_prior_liquefaction_model.tif']));
 
-
+'
 %% Fix Data Input
 %% 看起来是要把footprint数据二值化，那这样做其实是会丢失一些信息的，后续留意一下。
 %% nan值直接置为0，后续留意一下nan值是如何产生的。
@@ -37,7 +37,7 @@ LF(isnan(LF))=0;
 %BD = double(BD);
 %LS = LS(1:2616,1:2837);
 %LF = LF(1:2616,1:2837);
-Y = (Y+10)/20;
+Y = (Y+11)/20;
 %% Convert Landslide Areal Percentages to Probabilities
 %% LS数据是已经经过处理的数据，叫做LAP数据，最原始的数据应该是点类型和多边形类型的混合
 %% 下面的LS数据也是一样的。
@@ -46,7 +46,7 @@ Y = (Y+10)/20;
 %% 还有一个问题是这里会解出复根，只取实部是否合理？或者怎么解释这件事？
 new_LS = LS;
 index = find(LS>0);
-for i = index'
+for i = index
     p = [4.035 -3.042 5.237 (-7.592-log(LS(i)))];
     tmp_root = roots(p);
     new_LS(i) = real(tmp_root(imag(tmp_root)==0));
