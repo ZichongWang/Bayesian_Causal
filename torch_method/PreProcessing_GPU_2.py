@@ -66,8 +66,8 @@ def liquefaction_conversion(LF):
 
 if __name__ == "__main__":
     # 1) 读取栅格
-    tif_path_ls = "/mnt/2023_turkey_prior_landslide_model.tif"
-    tif_path_lf = "/mnt/2023_turkey_prior_liquefaction_model.tif"
+    tif_path_ls = "/home/zichong/Bayesian_Causal/data/2023_turkey/prior_models/2023_turkey_prior_landslide_model.tif"
+    tif_path_lf = "/home/zichong/Bayesian_Causal/data/2023_turkey/prior_models/2023_turkey_prior_liquefaction_model.tif"
 
     print("Reading LS and LF ...")
     LS, LS_profile = read_raster(tif_path_ls)

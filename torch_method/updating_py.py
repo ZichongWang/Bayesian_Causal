@@ -6,6 +6,7 @@ import os
 from pruning_py import pruning
 from SVI_torch import svi
 np.random.seed(42)
+from PreProcessing_GPU_2 import landslide_conversion_gpu, liquefaction_conversion
 # 初始化
 import time
 import datetime
@@ -15,7 +16,8 @@ start_time = time.time()  # 开始计时，记录代码执行时间
 location = 'data'  # 文件所在的位置
 
 event = '2024_japan2'
-event ='2023_turkey_new'
+event ='2023_turkey'
+# event = '2023_turkey'
 # event = '2024_japan2'
 if event == '2023_turkey_new':
     event_1 = '2023_turkey'
@@ -42,6 +44,11 @@ BD, BD_profile = read_raster(os.path.join(location, event, 'building_footprint',
 LS, LS_profile = read_raster(os.path.join(location, event, 'prior_models', f'{event_1}_prior_landslide_model.tif'))
 LF, LF_profile = read_raster(os.path.join(location, event, 'prior_models', f'{event_1}_prior_liquefaction_model.tif'))
 
+print(f"Y.shape: {Y.shape}")
+print(f"Y.max: {Y.max()}, Y.min: {Y.min()}")
+print(f"BD.shape: {BD.shape}")
+print(f"LS.shape: {LS.shape}")
+print(f"LF.shape: {LF.shape}")
 # 数据修正
 BD[BD > 0] = 1  # 将基础数据 BD 中所有大于 0 的值设为 1
 Y[np.isnan(Y)] = 0  # 将 Y 数据中的 NaN 值设为 0
@@ -50,27 +57,14 @@ LS[np.isnan(LS)] = 0  # 将滑坡数据 LS 中的 NaN 值设为 0
 LF[np.isnan(LF)] = 0  # 将液化数据 LF 中的 NaN 值设为 0
 Y = (Y + 11) / 20
 
-# 将滑坡区域百分比转换为概率
-new_LS = np.copy(LS)  # 创建滑坡数据的副本
-index = np.where(LS > 0)  # 找到 LS 中大于 0 的元素索引
-for i in range(len(index[0])):
-    idx = (index[0][i], index[1][i])  # 获取当前元素的索引
-    p = [4.035, -3.042, 5.237, (-7.592 - np.log(LS[idx]))]  # 构建多项式方程
-    tmp_root = np.roots(p)  # 求解方程的根
-    real_roots = tmp_root[np.iscomplex(tmp_root) == False]  # 筛选出实数根
-    new_LS[idx] = np.real(real_roots)  # 将实数根存储到 new_LS，不取最大值
+new_LS = landslide_conversion_gpu(LS)
 print('Converted Landslide Areal Percentages to Probabilities')  # 输出转换完成的信息
 print("Elapsed time: {:.2f} seconds".format(time.time() - start_time))  # 输出当前已耗时间
 
-# 将液化区域百分比转换为概率
-new_LF = np.copy(LF)  # 创建液化数据的副本
-index = np.where(LF > 0)  # 找到 LF 中大于 0 的元素索引
-for i in range(len(index[0])):
-    idx = (index[0][i], index[1][i])  # 获取当前元素的索引
-    new_LF[idx] = (np.log((np.sqrt(0.4915 / LF[idx]) - 1) / 42.40)) / (-9.165)  # 根据给定公式计算概率
-    # new_LF[i] = (np.log((np.sqrt(0.4915 / LF[i]) - 1) / 42.40)) / (-9.165)
+new_LF = liquefaction_conversion(LF)
 print('Converted Liquefaction Areal Percentages to Probabilities')  # 输出转换完成的信息
 print("Elapsed time: {:.2f} seconds".format(time.time() - start_time))  # 输出当前已耗时间
+
 
 # 将概率值转换为非负数
 new_LF[new_LF < 0] = 0  # 将 new_LF 中小于 0 的值设为 0
@@ -126,7 +120,7 @@ final_QLF[final_QLF <= 0.4915 / (1 + 42.40)**2] = 0  # 液化概率小于阈值�
 final_QLS[(LS == 0) & (LF == 0)] = 0  # 将水体区域的滑坡概率设为 0
 final_QLF[(LS == 0) & (LF == 0)] = 0  # 将水体区域的液化概率设为 0
 
-output_dir = os.path.join(location, event, datetime.datetime.now().strftime('%Y%m%d_%H%M%S'))
+output_dir = os.path.join(location, event, f"{event}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 os.makedirs(output_dir, exist_ok =True)  # 创建输出文件夹
 # 导出 GeoTIFF 文件
