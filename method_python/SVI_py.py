@@ -28,6 +28,9 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
     
     返回：
     final_w, final_QBD, final_QLS, final_QLF, QLS, QLF, QBD, final_loss, best_loss, LOCAL
+    QBD: 建筑物的后验概率矩阵
+    QLS: 滑坡的后验概率矩阵
+    QLF: 液化的后验概率矩阵
     """
     # 初始化
     # w = w.flatten()
@@ -93,8 +96,9 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
             alLF = t_alLF.flatten()[idx]  # 从 t_alLF 中提取当前批次的样本
 
             # 迭代
-            for nq in range(Nq):
+            for nq in range(Nq):# Nq = 10, 是设定的后验概率迭代次数
                 q = 1 / (1 + np.exp(-Tfxn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta)))
+                # 使用Tfxn函数计算后验概率更新
                 qBD, qLS, qLF = q[:, 0], q[:, 1], q[:, 2]
                 qBD = qBD.reshape(-1, 1)
                 qLS = qLS.reshape(-1, 1)
@@ -123,6 +127,7 @@ def svi(Y, LS, LF, w, Nq, rho, delta, eps_0, LOCAL, lambda_, regu_type, sigma, p
                 QBD.flat[iD[:, i]] = qBD
                 QLS.flat[iD[:, i]] = qLS
                 QLF.flat[iD[:, i]] = qLF
+            #* 这个batch的迭代结束，得到一个batch的QBD, QLS, QLF
 
             # 修剪后的分类
             if np.sum(local >= 5) > 0:

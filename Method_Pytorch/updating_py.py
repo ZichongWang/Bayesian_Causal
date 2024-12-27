@@ -4,17 +4,18 @@ import scipy.io as sio
 from rasterio.enums import Resampling
 import os
 from pruning_py import pruning
-from SVI_py import svi
-import datetime
+from SVI_torch import svi
 np.random.seed(42)
 # 初始化
 import time
+import datetime
 start_time = time.time()  # 开始计时，记录代码执行时间
 
 # 导入地理数据
 location = 'data'  # 文件所在的位置
 
 event = '2024_japan2'
+event ='2023_turkey_new'
 # event = '2024_japan2'
 if event == '2023_turkey_new':
     event_1 = '2023_turkey'

@@ -53,7 +53,7 @@ def loss_fn(y, qBD, qLS, qLF, alLS, alLF, w, local, delta):
           ((local == 3) | (local == 4) | (local == 6)) * (qBD * np.log(f_qBD + 1e-6) + (1 - qBD) * np.log(1 - f_qBD + 1e-6))
     LBD[(local == 0) | (local == 1) | (local == 2) | (local == 5)] = 0
 
-    # LLS 计算
+    # LLS 计算   
     LLS = ((local == 1) | (local == 3) | (local == 5) | (local == 6)) * (qLS * f(-w[3] - w[13] * alLS + (w[10] ** 2) / 2) +
                                                                          (1 - qLS) * f(w[3] + w[13] * alLS + (w[10] ** 2) / 2) -
                                                                          qLS * np.log(f_qLS + 1e-6) - (1 - qLS) * np.log(1 - f_qLS + 1e-6))
